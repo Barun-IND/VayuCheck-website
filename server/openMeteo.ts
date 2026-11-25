@@ -39,6 +39,20 @@ function round1(val: number): number {
   return Math.round(val * 10) / 10;
 }
 
+/** Computes a 0–100 fog/mist severity score from visibility (km) and relative humidity (%). */
+function computeFogIndex(visibilityKm: number, humidity: number): number {
+  if (visibilityKm <= 1.0) {
+    return Math.min(100, Math.round(80 + (1.0 - visibilityKm) * 20));
+  }
+  if (visibilityKm <= 3.5) {
+    return Math.round(40 + ((3.5 - visibilityKm) / 2.5) * 40 * (humidity >= 75 ? 1 : 0.7));
+  }
+  if (visibilityKm <= 6.0 && humidity >= 85) {
+    return Math.round(((6.0 - visibilityKm) / 2.5) * 35);
+  }
+  return 0;
+}
+
 function classifyAqi(usAqi: number): { band: AqiBand; label: string; summary: string } {
   if (usAqi <= 50) {
     return {
@@ -573,15 +587,7 @@ export async function fetchAtmosphericData(
     const visKm = round1(visMeters / 1000);
     const rain = round1(weatherData.hourly.rain?.[idx] ?? weatherData.hourly.precipitation?.[idx] ?? 0);
     const rh = Math.round(weatherData.hourly.relative_humidity_2m?.[idx] ?? weatherData.current.relative_humidity_2m);
-    // Fog index: 0-100 score where visibility <= 1km is dense fog (80-100), 1-3km is moderate fog/mist (40-80)
-    let fogIndex = 0;
-    if (visKm <= 1.0) {
-      fogIndex = Math.min(100, Math.round(80 + (1.0 - visKm) * 20));
-    } else if (visKm <= 3.5) {
-      fogIndex = Math.round(40 + ((3.5 - visKm) / 2.5) * 40 * (rh >= 75 ? 1 : 0.7));
-    } else if (visKm <= 6.0 && rh >= 85) {
-      fogIndex = Math.round(((6.0 - visKm) / 2.5) * 35);
-    }
+    const fogIndex = computeFogIndex(visKm, rh);
 
     return {
       time: isoTime,
@@ -643,14 +649,7 @@ export async function fetchAtmosphericData(
   const todayVent = activities.find((a) => a.id === 'cross-ventilation' && a.dayIndex === 0);
 
   const currentRain = round1(weatherData.current.rain ?? weatherData.current.precipitation ?? matchingHour?.rainMm ?? 0);
-  let currentFogIndex = 0;
-  if (currentVisibilityKm <= 1.0) {
-    currentFogIndex = Math.min(100, Math.round(80 + (1.0 - currentVisibilityKm) * 20));
-  } else if (currentVisibilityKm <= 3.5) {
-    currentFogIndex = Math.round(40 + ((3.5 - currentVisibilityKm) / 2.5) * 40 * (weatherData.current.relative_humidity_2m >= 75 ? 1 : 0.7));
-  } else if (currentVisibilityKm <= 6.0 && weatherData.current.relative_humidity_2m >= 85) {
-    currentFogIndex = Math.round(((6.0 - currentVisibilityKm) / 2.5) * 35);
-  }
+  const currentFogIndex = computeFogIndex(currentVisibilityKm, weatherData.current.relative_humidity_2m);
 
   const snapshot: AtmosphericSnapshot = {
     location: {

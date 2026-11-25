@@ -54,6 +54,57 @@ function formatGeminiError(err: unknown): { status: number; error: string } {
   return { status: 500, error: rawMessage };
 }
 
+function parseQueryString(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function parseLocationFromQuery(query: Record<string, unknown>): LocationInfo {
+  const latStr = parseQueryString(query.lat);
+  const lonStr = parseQueryString(query.lon);
+  const lat = Number(latStr);
+  const lon = Number(lonStr);
+  if (!latStr || !lonStr || !Number.isFinite(lat) || !Number.isFinite(lon)) {
+    return DEFAULT_LOCATION;
+  }
+  return {
+    name: parseQueryString(query.name) || `${lat.toFixed(2)}, ${lon.toFixed(2)}`,
+    admin1: parseQueryString(query.admin1) || undefined,
+    country: parseQueryString(query.country) || 'Local Coordinates',
+    latitude: lat,
+    longitude: lon,
+  };
+}
+
+function sendError(res: express.Response, status: number, err: unknown, fallback: string): void {
+  const message = err instanceof Error ? err.message : fallback;
+  res.status(status).json({ error: message });
+}
+
+function registerBriefingRoute<T>(
+  app: express.Express,
+  routePath: string,
+  handler: (snapshot: AtmosphericSnapshot, profile: HouseholdProfile, forceRefresh: boolean) => Promise<T>
+): void {
+  app.post(routePath, async (req, res) => {
+    try {
+      const { snapshot, profile, forceRefresh } = req.body as {
+        snapshot?: AtmosphericSnapshot;
+        profile?: HouseholdProfile;
+        forceRefresh?: boolean;
+      };
+      if (!snapshot || !snapshot.current || !profile) {
+        res.status(400).json({ error: 'Both atmospheric snapshot and household profile are required.' });
+        return;
+      }
+      const payload = await handler(snapshot, profile, Boolean(forceRefresh));
+      res.json(payload);
+    } catch (err) {
+      const { status, error } = formatGeminiError(err);
+      res.status(status).json({ error });
+    }
+  });
+}
+
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
@@ -76,11 +127,8 @@ async function startServer() {
 
   app.get('/api/user-state', async (req, res) => {
     try {
-      const sessionId = typeof req.query.sessionId === 'string' ? req.query.sessionId.trim() : '';
-      const date =
-        typeof req.query.date === 'string' && req.query.date.trim()
-          ? req.query.date.trim()
-          : new Date().toISOString().slice(0, 10);
+      const sessionId = parseQueryString(req.query.sessionId);
+      const date = parseQueryString(req.query.date) || new Date().toISOString().slice(0, 10);
       if (sessionId.length < 8) {
         res.status(400).json({ error: 'Valid sessionId is required.' });
         return;
@@ -88,8 +136,7 @@ async function startServer() {
       const state = await getUserState(sessionId, date);
       res.json({ state });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to load user state.';
-      res.status(500).json({ error: message });
+      sendError(res, 500, err, 'Unable to load user state.');
     }
   });
 
@@ -107,8 +154,7 @@ async function startServer() {
       await saveHouseholdProfile(sessionId, location, profile);
       res.json({ ok: true });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to save profile.';
-      res.status(500).json({ error: message });
+      sendError(res, 500, err, 'Unable to save profile.');
     }
   });
 
@@ -133,26 +179,23 @@ async function startServer() {
       await toggleHackCommit(sessionId, commitDate, hackId, committed, meta);
       res.json({ ok: true });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to update hack commit.';
-      res.status(500).json({ error: message });
+      sendError(res, 500, err, 'Unable to update hack commit.');
     }
   });
 
   app.get('/api/geocode', async (req, res) => {
     try {
-      const q = typeof req.query.q === 'string' ? req.query.q : '';
-      const results = await searchCities(q);
+      const results = await searchCities(parseQueryString(req.query.q));
       res.json({ results });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to search locations.';
-      res.status(502).json({ error: message });
+      sendError(res, 502, err, 'Unable to search locations.');
     }
   });
 
   app.get('/api/reverse-geocode', async (req, res) => {
     try {
-      const latStr = typeof req.query.lat === 'string' ? req.query.lat.trim() : '';
-      const lonStr = typeof req.query.lon === 'string' ? req.query.lon.trim() : '';
+      const latStr = parseQueryString(req.query.lat);
+      const lonStr = parseQueryString(req.query.lon);
       const lat = Number(latStr);
       const lon = Number(lonStr);
       if (!latStr || !lonStr || !Number.isFinite(lat) || !Number.isFinite(lon)) {
@@ -162,111 +205,25 @@ async function startServer() {
       const location = await reverseGeocode(lat, lon);
       res.json({ location });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unable to resolve coordinates.';
-      res.status(502).json({ error: message });
+      sendError(res, 502, err, 'Unable to resolve coordinates.');
     }
   });
 
   app.get('/api/air-data', async (req, res) => {
     try {
-      const latStr = typeof req.query.lat === 'string' ? req.query.lat.trim() : '';
-      const lonStr = typeof req.query.lon === 'string' ? req.query.lon.trim() : '';
-      const latRaw = Number(latStr);
-      const lonRaw = Number(lonStr);
-      const hasCoords =
-        latStr.length > 0 &&
-        lonStr.length > 0 &&
-        Number.isFinite(latRaw) &&
-        Number.isFinite(lonRaw);
-
-      const location: LocationInfo = hasCoords
-        ? {
-            name:
-              typeof req.query.name === 'string' && req.query.name.trim()
-                ? req.query.name.trim()
-                : `${latRaw.toFixed(2)}, ${lonRaw.toFixed(2)}`,
-            admin1:
-              typeof req.query.admin1 === 'string' && req.query.admin1.trim()
-                ? req.query.admin1.trim()
-                : undefined,
-            country:
-              typeof req.query.country === 'string' && req.query.country.trim()
-                ? req.query.country.trim()
-                : 'Local Coordinates',
-            latitude: latRaw,
-            longitude: lonRaw,
-          }
-        : DEFAULT_LOCATION;
-
+      const location = parseLocationFromQuery(req.query as Record<string, unknown>);
       const bypassCache = req.query.refresh === '1';
       const snapshot = await fetchAtmosphericData(location, bypassCache);
       void logAirObservation(snapshot);
       res.json(snapshot);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Unable to fetch Open-Meteo air quality data.';
-      res.status(502).json({ error: message });
+      sendError(res, 502, err, 'Unable to fetch Open-Meteo air quality data.');
     }
   });
 
-  app.post('/api/briefing/summary', async (req, res) => {
-    try {
-      const { snapshot, profile, forceRefresh } = req.body as {
-        snapshot?: AtmosphericSnapshot;
-        profile?: HouseholdProfile;
-        forceRefresh?: boolean;
-      };
-      if (!snapshot || !snapshot.current || !profile) {
-        res.status(400).json({ error: 'Both atmospheric snapshot and household profile are required.' });
-        return;
-      }
-      const summary = await generateBriefingSummary(snapshot, profile, Boolean(forceRefresh));
-      res.json(summary);
-    } catch (err) {
-      const { status, error } = formatGeminiError(err);
-      res.status(status).json({ error });
-    }
-  });
-
-  app.post('/api/briefing/actions', async (req, res) => {
-    try {
-      const { snapshot, profile, forceRefresh } = req.body as {
-        snapshot?: AtmosphericSnapshot;
-        profile?: HouseholdProfile;
-        forceRefresh?: boolean;
-      };
-      if (!snapshot || !snapshot.current || !profile) {
-        res.status(400).json({ error: 'Both atmospheric snapshot and household profile are required.' });
-        return;
-      }
-      const actions = await generateBriefingActions(snapshot, profile, Boolean(forceRefresh));
-      res.json(actions);
-    } catch (err) {
-      const { status, error } = formatGeminiError(err);
-      res.status(status).json({ error });
-    }
-  });
-
-  app.post('/api/briefing', async (req, res) => {
-    try {
-      const { snapshot, profile, forceRefresh } = req.body as {
-        snapshot?: AtmosphericSnapshot;
-        profile?: HouseholdProfile;
-        forceRefresh?: boolean;
-      };
-
-      if (!snapshot || !snapshot.current || !profile) {
-        res.status(400).json({ error: 'Both atmospheric snapshot and household profile are required.' });
-        return;
-      }
-
-      const briefing = await generateDailyBriefing(snapshot, profile, Boolean(forceRefresh));
-      res.json(briefing);
-    } catch (err) {
-      const { status, error } = formatGeminiError(err);
-      res.status(status).json({ error });
-    }
-  });
+  registerBriefingRoute(app, '/api/briefing/summary', generateBriefingSummary);
+  registerBriefingRoute(app, '/api/briefing/actions', generateBriefingActions);
+  registerBriefingRoute(app, '/api/briefing', generateDailyBriefing);
 
   const isProd = process.env.NODE_ENV === 'production';
   if (!isProd) {
