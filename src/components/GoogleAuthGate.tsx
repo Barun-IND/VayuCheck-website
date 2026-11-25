@@ -39,7 +39,9 @@ export function GoogleAuthGate({ darkMode, onToggleDarkMode }: GoogleAuthGatePro
         <button
           type="button"
           onClick={onToggleDarkMode}
-          className="rounded-md border border-[#D7D1C5] bg-white px-3 py-1.5 text-xs font-medium text-[#181715] hover:bg-[#EFECE6] cursor-pointer"
+          aria-pressed={darkMode}
+          aria-label={darkMode ? 'Switch to light mode' : 'Switch to night mode'}
+          className="rounded-md border border-[#D7D1C5] bg-white px-3 py-1.5 text-xs font-medium text-[#181715] hover:bg-[#EFECE6] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1F4E43] cursor-pointer"
         >
           {darkMode ? 'Light mode' : 'Night mode'}
         </button>

@@ -3,7 +3,16 @@ import assert from 'node:assert/strict';
 import {
   generateBriefingActions,
   generateBriefingSummary,
+  generateDailyBriefing,
 } from '../server/geminiBriefing.ts';
+import { formatGeminiError } from '../server/app.ts';
+import {
+  checkSupabaseConnection,
+  getSupabaseClient,
+  getUserState,
+  saveHouseholdProfile,
+  toggleHackCommit,
+} from '../server/supabase.ts';
 import {
   CATEGORY_LABELS,
   DEFAULT_CITY,
@@ -85,8 +94,45 @@ describe('Gemini Briefing Fallbacks & UI Style Constants', () => {
 
     const actions = await generateBriefingActions(mockSnapshot, DEFAULT_PROFILE, true);
 
-    assert.ok(actions.recommendations.length >= 6);
+    assert.equal(actions.recommendations.length, 9);
     assert.ok(actions.recommendations.every((r) => r.estimatedCo2KgSaved > 0));
+  });
+
+  it('combines summary and profile actions in generateDailyBriefing', async () => {
+    delete process.env.GEMINI_API_KEY;
+
+    const briefing = await generateDailyBriefing(mockSnapshot, DEFAULT_PROFILE, true);
+
+    assert.ok(briefing.headlineSummary.includes('New Delhi'));
+    assert.equal(briefing.recommendations.length, 9);
+    assert.ok(briefing.activityNotes.length >= 2);
+  });
+
+  it('maps Gemini SDK errors to appropriate HTTP status codes', () => {
+    assert.equal(formatGeminiError(new Error('API_KEY_INVALID')).status, 403);
+    assert.equal(formatGeminiError(new Error('RESOURCE_EXHAUSTED 429')).status, 503);
+    assert.equal(formatGeminiError(new Error('GEMINI_API_KEY is not configured')).status, 503);
+    assert.equal(formatGeminiError(new Error('unexpected failure')).status, 500);
+  });
+
+  it('handles Supabase operations gracefully when environment variables are absent', async () => {
+    const prevUrl = process.env.SUPABASE_URL;
+    const prevViteUrl = process.env.VITE_SUPABASE_URL;
+    delete process.env.SUPABASE_URL;
+    delete process.env.VITE_SUPABASE_URL;
+    try {
+      // Only assert safe non-throwing behavior regardless of cached client state
+      const conn = await checkSupabaseConnection();
+      assert.equal(typeof conn.connected, 'boolean');
+      const state = await getUserState('non-existent-session', '2026-11-26');
+      assert.ok(state === null || typeof state === 'object');
+      await saveHouseholdProfile('non-existent-session', DEFAULT_CITY, DEFAULT_PROFILE);
+      await toggleHackCommit('non-existent-session', '2026-11-26', 'h1', true);
+      assert.ok(getSupabaseClient() === null || typeof getSupabaseClient() === 'object');
+    } finally {
+      if (prevUrl !== undefined) process.env.SUPABASE_URL = prevUrl;
+      if (prevViteUrl !== undefined) process.env.VITE_SUPABASE_URL = prevViteUrl;
+    }
   });
 
   it('exposes complete AQI tone helpers, category labels, and preset cities', () => {

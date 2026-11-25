@@ -103,7 +103,7 @@ export function ProfileDrawer({
             aria-label="Close household profile"
             className="flex h-9 w-9 items-center justify-center rounded-md text-[#5E5A52] hover:bg-[#EFECE6] hover:text-[#181715] cursor-pointer"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
@@ -121,6 +121,7 @@ export function ProfileDrawer({
                     <button
                       key={opt.value}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => setDraft((d) => ({ ...d, sensitivity: opt.value }))}
                       className={`w-full rounded-md border px-3.5 py-2.5 text-left transition-colors duration-150 cursor-pointer ${
                         selected
@@ -148,6 +149,7 @@ export function ProfileDrawer({
                     <button
                       key={opt.value}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => setDraft((d) => ({ ...d, commute: opt.value }))}
                       className={`h-10 rounded-md border px-3 text-xs font-medium whitespace-nowrap transition-colors duration-150 cursor-pointer ${
                         selected
@@ -174,6 +176,7 @@ export function ProfileDrawer({
                     <button
                       key={opt.value}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => setDraft((d) => ({ ...d, heatingCooking: opt.value }))}
                       className={`h-10 rounded-md border px-3.5 text-left text-xs font-medium transition-colors duration-150 cursor-pointer ${
                         selected
@@ -200,6 +203,7 @@ export function ProfileDrawer({
                     <button
                       key={opt.value}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => setDraft((d) => ({ ...d, indoorSetup: opt.value }))}
                       className={`h-10 rounded-md border px-3.5 text-left text-xs font-medium transition-colors duration-150 cursor-pointer ${
                         selected
@@ -229,7 +233,7 @@ export function ProfileDrawer({
                   }
                   className="flex h-8 w-8 items-center justify-center rounded border border-[#D7D1C5] bg-[#F7F5F0] text-[#181715] hover:bg-[#EFECE6] cursor-pointer"
                 >
-                  <Minus className="h-3.5 w-3.5" />
+                  <Minus className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
                 <span className="w-6 text-center font-mono text-sm font-semibold tabular-nums text-[#181715]">
                   {draft.householdSize}
@@ -242,7 +246,7 @@ export function ProfileDrawer({
                   }
                   className="flex h-8 w-8 items-center justify-center rounded border border-[#D7D1C5] bg-[#F7F5F0] text-[#181715] hover:bg-[#EFECE6] cursor-pointer"
                 >
-                  <Plus className="h-3.5 w-3.5" />
+                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
                 </button>
               </div>
             </div>

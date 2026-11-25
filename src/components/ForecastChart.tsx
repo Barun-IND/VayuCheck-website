@@ -159,7 +159,6 @@ export function ForecastChart({ hourly, currentTime }: ForecastChartProps) {
 
     // rain_fog mode: dedicated dual line graph of Rain (mm) and Fog Index (0-100)
     const maxRain = Math.max(5, ...hourly.map((h) => h.rainMm ?? 0));
-    const maxY = Math.max(100, Math.ceil(maxRain * 10)); // 0-100 scale fits Fog Index (0-100%) and Rain scaled to mm
     const yFor = (v: number) => PAD.top + PLOT_H - (Math.min(v, 100) / 100) * PLOT_H;
 
     // Rain points: map rain mm into 0-100 range (e.g. 10mm = 100%) for visual parity with fog index

@@ -124,7 +124,10 @@ export function DailyBriefingLedger({
       </div>
 
       {/* Cumulative Direct Impact Strip */}
-      <div className="grid grid-cols-1 gap-4 border-b border-[#EFECE6] py-5 sm:grid-cols-3">
+      <div
+        aria-live="polite"
+        className="grid grid-cols-1 gap-4 border-b border-[#EFECE6] py-5 sm:grid-cols-3"
+      >
         <div>
           <p className="text-xs text-[#5E5A52]">Daily Hacks Completed</p>
           <p className="mt-1 font-mono text-2xl font-semibold tabular-nums text-[#181715]">
@@ -174,6 +177,7 @@ export function DailyBriefingLedger({
                 type="button"
                 role="tab"
                 aria-selected={isActive}
+                aria-controls="daily-hacks-panel"
                 onClick={() => setFilter(tab.id)}
                 className={`relative rounded-md px-3.5 py-1.5 text-xs font-medium whitespace-nowrap shrink-0 transition-all duration-200 cursor-pointer ${
                   isActive
@@ -230,7 +234,7 @@ export function DailyBriefingLedger({
           No hacks match this category. Switch to All Hacks to view the full plan.
         </div>
       ) : (
-        <div className="mt-4 space-y-2">
+        <div id="daily-hacks-panel" role="tabpanel" className="mt-4 space-y-2">
           {filtered.map((rec) => {
             const isCommitted = committedIds.includes(rec.id);
             const isExpanded = Boolean(expandedIds[rec.id]);
@@ -265,11 +269,14 @@ export function DailyBriefingLedger({
                           {isCommitted ? (
                             <Check className="h-3 w-3 text-[#1F4E43]" aria-hidden="true" />
                           ) : (
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#847F75]/40" />
+                            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#847F75]/40" />
                           )}
                         </span>
                       </button>
-                      <span className="block text-[10px] text-center font-medium mt-1 text-[#847F75] select-none">
+                      <span
+                        aria-hidden="true"
+                        className="block text-[10px] text-center font-medium mt-1 text-[#847F75] select-none"
+                      >
                         {isCommitted ? 'Done' : 'To do'}
                       </span>
                     </div>
@@ -277,7 +284,7 @@ export function DailyBriefingLedger({
                     <div className="space-y-1.5 flex-1 min-w-0">
                       {/* Unboxed quiet metadata kicker */}
                       <div className="flex flex-wrap items-center gap-1.5 text-xs text-[#847F75]">
-                        <span className={`font-medium ${isCommitted ? 'text-[#1F4E43]' : 'text-[#1F4E43]'}`}>
+                        <span className="font-medium text-[#1F4E43]">
                           {CATEGORY_LABELS[rec.category]}
                         </span>
                         <span aria-hidden="true">·</span>

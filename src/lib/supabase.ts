@@ -1,8 +1,9 @@
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js';
 import type { HouseholdProfile, LocationInfo } from '../types/air';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+const viteEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+const supabaseUrl = viteEnv?.VITE_SUPABASE_URL;
+const supabaseKey = viteEnv?.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export const supabase: SupabaseClient | null =
   supabaseUrl && supabaseKey
