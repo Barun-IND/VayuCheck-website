@@ -15,7 +15,16 @@ interface CacheEntry<T> {
 }
 
 const airCache = new Map<string, CacheEntry<AtmosphericSnapshot>>();
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_TTL_MS = 15 * 60 * 1000;
+
+async function fetchWithRetry(url: string, retries = 1): Promise<Response> {
+  const res = await fetch(url);
+  if (res.status === 429 && retries > 0) {
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    return fetchWithRetry(url, retries - 1);
+  }
+  return res;
+}
 
 export const DEFAULT_LOCATION: LocationInfo = {
   name: 'New Delhi',
@@ -482,12 +491,26 @@ export async function fetchAtmosphericData(
     `&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,visibility,rain,precipitation` +
     `&timezone=auto&forecast_days=2`;
 
-  const [aqRes, weatherRes] = await Promise.all([fetch(aqUrl), fetch(weatherUrl)]);
+  const [aqRes, weatherRes] = await Promise.all([
+    fetchWithRetry(aqUrl),
+    fetchWithRetry(weatherUrl),
+  ]);
 
-  if (!aqRes.ok) {
-    throw new Error(`Open-Meteo Air Quality API failed with HTTP ${aqRes.status}`);
-  }
-  if (!weatherRes.ok) {
+  if (!aqRes.ok || !weatherRes.ok) {
+    if (cached) {
+      return {
+        ...cached.data,
+        location: {
+          ...cached.data.location,
+          name: location.name,
+          country: location.country,
+          admin1: location.admin1,
+        },
+      };
+    }
+    if (!aqRes.ok) {
+      throw new Error(`Open-Meteo Air Quality API failed with HTTP ${aqRes.status}`);
+    }
     throw new Error(`Open-Meteo Weather API failed with HTTP ${weatherRes.status}`);
   }
 

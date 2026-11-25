@@ -8,6 +8,7 @@ import type {
   LocationInfo,
 } from './types/air';
 import { DEFAULT_CITY, DEFAULT_PROFILE } from './lib/airStyle';
+import { fetchAtmosphericData } from '../server/openMeteo';
 import {
   loadAuthenticatedUserState,
   saveAuthenticatedUserProfile,
@@ -363,7 +364,12 @@ export default function App() {
       });
       const data = (await res.json()) as AtmosphericSnapshot & { error?: string };
       if (!res.ok) {
-        throw new Error(data.error || `Air data request failed (${res.status})`);
+        // Render's shared outbound IPs can hit Open-Meteo 429 rate limits;
+        // fall back to fetching Open-Meteo directly from the user's browser.
+        const clientSnapshot = await fetchAtmosphericData(loc, forceRefresh);
+        if (reqId !== airSeqRef.current) return;
+        setSnapshot(clientSnapshot);
+        return;
       }
 
       if (reqId !== airSeqRef.current) return;
