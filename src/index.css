@@ -1,0 +1,221 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-stone-canvas: #F7F5F0;
+  --color-stone-surface: #FFFFFF;
+  --color-stone-muted: #EFECE6;
+  --color-stone-border: #E2DDD3;
+  --color-ink-primary: #181715;
+  --color-ink-secondary: #5E5A52;
+  --color-ink-tertiary: #847F75;
+  --color-civic-pine: #1F4E43;
+  --color-civic-pine-hover: #173C33;
+  --color-aqi-good: #2D6A4F;
+  --color-aqi-moderate: #9A6B16;
+  --color-aqi-unhealthy: #B84A27;
+  --color-aqi-severe: #7F1D1D;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    font-family: var(--font-sans);
+    background-color: var(--color-stone-canvas);
+    color: var(--color-ink-primary);
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dashoffset: 40;
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    stroke-dashoffset: -80;
+    opacity: 0.1;
+  }
+}
+
+@keyframes rainFall {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0.2;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(180px);
+    opacity: 0.1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Nordic Night Mode */
+html.dark {
+  color-scheme: dark;
+  background-color: #121311;
+  color: #F2EFE9;
+}
+
+html.dark body {
+  background-color: #121311 !important;
+  color: #F2EFE9 !important;
+}
+
+html.dark .bg-\[\#F7F5F0\],
+html.dark .bg-\[\#F7F5F0\]\/95 {
+  background-color: #121311 !important;
+}
+
+html.dark .bg-white,
+html.dark .bg-\[\#FFFFFF\],
+html.dark .bg-\[\#FFFFFF\]\/70,
+html.dark .bg-white\/95,
+html.dark .bg-white\/90,
+html.dark .bg-white\/80,
+html.dark .bg-white\/60 {
+  background-color: #1B1C19 !important;
+}
+
+html.dark .bg-\[\#FAF9F6\],
+html.dark .bg-\[\#FAF9F6\]\/80,
+html.dark .bg-\[\#FAF9F6\]\/50,
+html.dark .bg-\[\#FAF9F6\]\/30 {
+  background-color: #222420 !important;
+}
+
+html.dark .bg-\[\#EFECE6\],
+html.dark .bg-\[\#EFECE6\]\/70 {
+  background-color: #2A2C27 !important;
+}
+
+html.dark .bg-\[\#F4F9F6\],
+html.dark .bg-\[\#F2F7F4\] {
+  background-color: #182923 !important;
+}
+
+html.dark .bg-\[\#FAF6EC\] {
+  background-color: #292316 !important;
+}
+
+html.dark .bg-\[\#FBF3EF\],
+html.dark .bg-\[\#FAF1ED\],
+html.dark .bg-\[\#F9EFEF\] {
+  background-color: #2C1B19 !important;
+}
+
+html.dark .from-\[\#FAF9F6\] {
+  --tw-gradient-from: #20221E !important;
+}
+
+html.dark .via-\[\#F5F2EB\] {
+  --tw-gradient-via: #1C1E1A !important;
+}
+
+html.dark .to-\[\#EFECE4\] {
+  --tw-gradient-to: #181A17 !important;
+}
+
+html.dark .border-\[\#E2DDD3\],
+html.dark .border-\[\#E2DDD3\]\/80,
+html.dark .border-\[\#E2DDD3\]\/70,
+html.dark .border-\[\#D7D1C5\],
+html.dark .border-\[\#EFECE6\],
+html.dark .divide-\[\#EFECE6\] > :not(:last-child) {
+  border-color: #32342E !important;
+}
+
+html.dark .border-\[\#C8DFD3\] {
+  border-color: #2D5A4B !important;
+}
+
+html.dark .border-\[\#E2BDBD\] {
+  border-color: #6B3434 !important;
+}
+
+html.dark .text-\[\#181715\] {
+  color: #F2EFE9 !important;
+}
+
+html.dark .text-\[\#5E5A52\] {
+  color: #B8B3A8 !important;
+}
+
+html.dark .text-\[\#847F75\] {
+  color: #948E82 !important;
+}
+
+html.dark .text-\[\#1F4E43\],
+html.dark .text-\[\#2D6A4F\] {
+  color: #56B89D !important;
+}
+
+html.dark .text-\[\#9A6B16\] {
+  color: #E3B04B !important;
+}
+
+html.dark .text-\[\#B84A27\] {
+  color: #EA7A54 !important;
+}
+
+html.dark .text-\[\#7F1D1D\] {
+  color: #F08080 !important;
+}
+
+html.dark .fill-\[\#847F75\] {
+  fill: #948E82 !important;
+}
+
+html.dark .hover\:bg-\[\#F7F5F0\]:hover,
+html.dark .hover\:bg-\[\#FAF9F6\]:hover,
+html.dark .hover\:bg-\[\#EFECE6\]:hover,
+html.dark .hover\:bg-\[\#EFECE6\]\/70:hover {
+  background-color: #2A2C27 !important;
+}
+
+html.dark .hover\:text-\[\#181715\]:hover {
+  color: #F2EFE9 !important;
+}
+
+/* Keep the illustrated weather stage bright enough for multiply blend on weatherman.gif */
+html.dark .bg-\[\#FAF9F5\] {
+  background-color: #E8E4DA !important;
+}
+
+html.dark .bg-\[\#FAF9F5\] .text-\[\#181715\] {
+  color: #181715 !important;
+}
+
+html.dark .bg-\[\#FAF9F5\] .text-\[\#5E5A52\] {
+  color: #5E5A52 !important;
+}
+
+html.dark .bg-\[\#FAF9F5\] .text-\[\#1F4E43\] {
+  color: #1F4E43 !important;
+}

@@ -1,0 +1,1 @@
+{"name":"VayuCheck","description":"Minimalist urban air quality and winter smog dashboard combining live Open-Meteo forecasts with structured GenAI daily routines, indoor air hacks, and safe activity planning.","requestFramePermissions":["geolocation"],"majorCapabilities":["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]}
